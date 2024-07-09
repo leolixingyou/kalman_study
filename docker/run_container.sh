@@ -5,5 +5,5 @@ docker run -it \
 --net=host \
 --gpus all \
 --privileged \
---name refactoring_vision_trt \
-rosvision:xingyou_0312
+--name kalman_study \
+leolixingyou/kalman_2d:20240709
