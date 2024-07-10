@@ -2,10 +2,9 @@ import cv2
 import copy 
 import numpy as np
 
-from math import cos, sin, sqrt, pi
-from src_code.tl_detector.kalman_study.read_video import VIDEO_READER
-from src_code.tl_detector.kalman_study.kalman_ball import detect_object, annotate_tracked_object, Kalman_Single_Ball
-from plot_kalman_figures import plot_detection_and_tracking, plot_detection_and_tracking_2
+from read_video import VIDEO_READER
+from kalman_ball import detect_object
+from plot_kalman_figures import plot_detection_and_tracking_2
 
 
 def param_kalman(kalman, initial_location):

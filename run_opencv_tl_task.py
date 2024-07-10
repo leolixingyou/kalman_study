@@ -4,7 +4,7 @@ from read_video import VIDEO_READER
 from kalman_ball import detect_object, annotate_tracked_object, Kalman_Single_Ball
 from plot_kalman_figures import plot_detection_and_tracking
 
-file_path = '/workspace/src_code/tl_detector/kalman_study/singleball.mp4'
+file_path = '/workspace/src_code/tl_detector/kalman_study/time_2024_06_19_14_48_f60.mp4'
 video_reader = VIDEO_READER(file_path)
 
 ret,first_frame = video_reader.cap.read()
