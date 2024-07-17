@@ -2,6 +2,7 @@ import cv2
 import copy
 import numpy as np
 
+
 def detect_object(frame, firts_frame):
     frame_dev = cv2.absdiff(frame, firts_frame)
     _, frame_detect = cv2.threshold(frame_dev, 100, 255, cv2.THRESH_BINARY)
@@ -13,8 +14,8 @@ def detect_object(frame, firts_frame):
             (x, y), radius = cv2.minEnclosingCircle(largest_contour)
             center = np.array([x, y]) 
             
-            return center, True
-    return np.array([]), False
+            return center, True, largest_contour
+    return np.array([]), False, None
 
 
 def annotate_tracked_object(frame, detected_location, is_object_detected, tracked_location, label):

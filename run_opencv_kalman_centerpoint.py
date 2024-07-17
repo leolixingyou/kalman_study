@@ -36,29 +36,43 @@ def param_kalman(kalman, initial_location):
 
 def annotate_tracked_object_kalman(frame, detected_location, is_object_detected, prediction6x1, correction6x1):
     frame_detect = copy.copy(frame)
-    frame_track = copy.copy(frame)
+    frame_predict = copy.copy(frame)
+    frame_correct = copy.copy(frame)
     frame_combined = copy.copy(frame)
 
     if prediction6x1 is not None:
         pt = list(map(int,prediction6x1[::3]))
-        cv2.circle(frame_combined, pt, 5, (0, 0, 255), -1)
-        cv2.putText(frame_combined, str(pt), pt - np.array([0,20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
+        cv2.circle(frame_predict, pt, 5, (0, 0, 255), -1)
+        cv2.putText(frame_predict, str(pt), pt - np.array([0,20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
+        cv2.circle(frame_combined, pt, 5, (255, 0, 255), -1)
+        cv2.putText(frame_combined, str(pt), pt - np.array([20,40]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
+        cv2.putText(frame_combined, 'Prediction', pt - np.array([20,20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
 
     if is_object_detected:
         pt = list(map(int,detected_location))
         cv2.circle(frame_detect, pt, 5, (0, 0, 255), -1)
+        cv2.putText(frame_detect, str(pt), pt - np.array([0,20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
         cv2.circle(frame_combined, pt, 5, (255, 100, 0), -1)
+        cv2.putText(frame_combined, str(pt), pt - np.array([-20,40]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 100, 0), 2)
+        cv2.putText(frame_combined, 'Detection', pt - np.array([-20,20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 100, 0), 2)
 
     if correction6x1 is not None:
         pt = list(map(int,correction6x1[::3]))
-        cv2.circle(frame_combined, pt, 5, (0, 0, 255), -1)
-        cv2.putText(frame_combined, str(pt), pt - np.array([0,20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
+        cv2.circle(frame_correct, pt, 5, (0, 0, 255), -1)
+        cv2.putText(frame_correct, str(pt), pt - np.array([0,20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
+
+        cv2.circle(frame_combined, pt, 5, (0, 255, 255), -1)
+        cv2.putText(frame_combined, str(pt), pt + np.array([20,20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+        cv2.putText(frame_combined, 'Correction', pt + np.array([20,40]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+
+    return frame_detect, frame_predict, frame_correct, frame_combined 
 
 
-    return frame_detect, frame_track, frame_combined 
 
-
-file_path = '/workspace/src_code/tl_detector/kalman_study/singleball.mp4'
+file_path = '/workspace/singleball.mp4'
 video_reader = VIDEO_READER(file_path)
 
 ret,first_frame = video_reader.cap.read()
@@ -76,7 +90,7 @@ while video_reader.cap.isOpened():
         break
 
     ## detection
-    detected_location, is_object_detected = detect_object(frame, first_frame)
+    detected_location, is_object_detected, _ = detect_object(frame, first_frame)
 
     if not kalman_init:
         if is_object_detected:
@@ -88,7 +102,7 @@ while video_reader.cap.isOpened():
             kalman.correct(detected_location.astype(np.float32))
             correction6x1 = kalman.statePost.copy()
     
-    frame_detect, frame_track, frame_combined = annotate_tracked_object_kalman(frame, detected_location, is_object_detected, prediction6x1, correction6x1)
+    frame_detect, frame_predict, frame_correct, frame_combined = annotate_tracked_object_kalman(frame, detected_location, is_object_detected, prediction6x1, correction6x1)
 
     detection_list.append(detected_location if detected_location!=[] else None)
     correction_list.append(correction6x1[::3] if correction6x1 is not None else None)
@@ -97,7 +111,8 @@ while video_reader.cap.isOpened():
     # Display the frame
     cv2.imshow('Raw Image', frame)
     cv2.imshow('Detection Image', frame_detect)
-    cv2.imshow('Tracking Image', frame_track)
+    cv2.imshow('Predict Image', frame_predict)
+    cv2.imshow('Correct Image', frame_correct)
     cv2.imshow('Commbined Image', frame_combined)
     # ###Press 'q' to exit the video early
     # if cv2.waitKey(int(1000 / video_reader.fps)) & 0xFF == ord('q'):

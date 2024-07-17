@@ -25,7 +25,7 @@ while video_reader.cap.isOpened():
     # else:
     #     is_object_detected = False
 
-    tracked_location, label = kmsb.tracking_state_judgement(detected_location, is_object_detected)
+    tracked_location, label, _ = kmsb.tracking_state_judgement(detected_location, is_object_detected)
     frame_detect, frame_track, frame_combined = annotate_tracked_object(frame, detected_location, is_object_detected, tracked_location, label)
 
     detection_list.append(detected_location if detected_location!=[] else None)

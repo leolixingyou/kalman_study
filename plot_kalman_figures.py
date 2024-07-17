@@ -41,8 +41,8 @@ def plot_detection_and_tracking_2(first_frame, detection_list, prediction_list, 
 
 
     ax.plot(detection_x, detection_y, 'rx', label='Detections', markersize = 10)
-    ax.plot(prediction_list_x, prediction_list_y, 'yo', label='prediction_list_x', markersize = 5)
-    ax.plot(correction_list_x, correction_list_y, 'bo', label='correction_list_x', markersize = 5)
+    ax.plot(prediction_list_x, prediction_list_y, 'ro', label='prediction_list_x', markersize = 5, alpha = 0.5)
+    ax.plot(correction_list_x, correction_list_y, 'bo', label='correction_list_x', markersize = 5, alpha = 0.1)
 
     # 标注检测点的索引
     for i, (x, y) in enumerate(zip(detection_x, detection_y)):
