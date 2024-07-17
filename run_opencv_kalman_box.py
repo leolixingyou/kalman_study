@@ -49,7 +49,22 @@ def param_kalman(kalman, initial_location):
        
     return kalman
 
-def annotate_box_tracked_object_kalman(frame, detected_location, is_object_detected, prediction6x1, correction6x1):
+def boundary_limits(pts):
+    if pts[0] < 0:
+        pts[0] = 0
+    if pts[0] > img_w:
+        pts[0] = img_w
+
+    if pts[1] < 0:
+        pts[1] = 0
+    if pts[1] > img_h:
+        pts[1] = img_h
+
+    pts = [int(x) for x in pts]
+
+    return pts
+
+def annotate_box_tracked_object_kalman(frame, detected_location, is_object_detected, prediction6x1, correction6x1, img_h, img_w):
     frame_detect = copy.copy(frame)
     frame_predict = copy.copy(frame)
     frame_correct = copy.copy(frame)
@@ -57,29 +72,46 @@ def annotate_box_tracked_object_kalman(frame, detected_location, is_object_detec
 
     if prediction6x1 is not None:
         pt = np.reshape([prediction6x1[0],prediction6x1[2]],-1).astype(np.int32)
+        pt_top = np.array([prediction6x1[0], prediction6x1[2]]) - (1/2) * np.array([prediction6x1[1], prediction6x1[3]])
+        pt_bottom = np.array([prediction6x1[0], prediction6x1[2]]) + (1/2) * np.array([prediction6x1[1], prediction6x1[3]])
 
-        cv2.circle(frame_predict, pt, 5, (0, 0, 255), -1)
+        pt_top = boundary_limits(pt_top)
+        pt_bottom = boundary_limits(pt_bottom)
+
+        cv2.rectangle(frame_predict, pt_top, pt_bottom, (0, 0, 255), 2)
         cv2.putText(frame_predict, str(pt), pt - np.array([0,20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
-        cv2.circle(frame_combined, pt, 5, (255, 0, 255), -1)
+        cv2.rectangle(frame_combined, pt_top, pt_bottom, (255, 0, 255), 2)
         cv2.putText(frame_combined, str(pt), pt - np.array([20,40]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
         cv2.putText(frame_combined, 'Prediction', pt - np.array([20,20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
 
     if is_object_detected:
         pt = np.reshape([detected_location[0],detected_location[2]],-1).astype(np.int32)
-        cv2.circle(frame_detect, pt, 5, (0, 0, 255), -1)
+        pt_top = np.array([detected_location[0], detected_location[2]]) - (1/2) * np.array([detected_location[1], detected_location[3]])
+        pt_bottom = np.array([detected_location[0], detected_location[2]]) + (1/2) * np.array([detected_location[1], detected_location[3]])
+        
+        pt_top = boundary_limits(pt_top)
+        pt_bottom = boundary_limits(pt_bottom)
+
+        cv2.rectangle(frame_detect, pt_top, pt_bottom, (0, 0, 255), 2)
         cv2.putText(frame_detect, str(pt), pt - np.array([0,20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
-        cv2.circle(frame_combined, pt, 5, (255, 100, 0), -1)
+        cv2.rectangle(frame_combined, pt_top, pt_bottom, (255, 100, 0), 2)
         cv2.putText(frame_combined, str(pt), pt - np.array([-20,40]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 100, 0), 2)
         cv2.putText(frame_combined, 'Detection', pt - np.array([-20,20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 100, 0), 2)
 
     if correction6x1 is not None:
         pt = np.reshape([correction6x1[0],correction6x1[2]],-1).astype(np.int32)
-        cv2.circle(frame_correct, pt, 5, (0, 0, 255), -1)
+        pt_top = np.array([correction6x1[0], correction6x1[2]]) - (1/2) * np.array([correction6x1[1], correction6x1[3]])
+        pt_bottom = np.array([correction6x1[0], correction6x1[2]]) + (1/2) * np.array([correction6x1[1], correction6x1[3]])
+
+        pt_top = boundary_limits(pt_top)
+        pt_bottom = boundary_limits(pt_bottom)
+
+        cv2.rectangle(frame_correct, pt_top, pt_bottom, (0, 0, 255), 2)
         cv2.putText(frame_correct, str(pt), pt - np.array([0,20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
 
-        cv2.circle(frame_combined, pt, 5, (0, 255, 255), -1)
+        cv2.rectangle(frame_combined, pt_top, pt_bottom, (0, 255, 255), 2)
         cv2.putText(frame_combined, str(pt), pt + np.array([20,20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
         cv2.putText(frame_combined, 'Correction', pt + np.array([20,40]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
 
@@ -91,6 +123,7 @@ file_path = '/workspace/singleball.mp4'
 video_reader = VIDEO_READER(file_path)
 
 ret,first_frame = video_reader.cap.read()
+img_h, img_w, _ = first_frame.shape
 kalman = cv2.KalmanFilter(6, 2)
 kalman_init = False
 detection_list = []
@@ -126,11 +159,11 @@ while video_reader.cap.isOpened():
             kalman.correct(box.astype(np.float32))
             correction6x1 = kalman.statePost.copy() 
     
-    frame_detect, frame_predict, frame_correct, frame_combined  = annotate_box_tracked_object_kalman(frame, box, is_object_detected, prediction6x1, correction6x1)
+    frame_detect, frame_predict, frame_correct, frame_combined  = annotate_box_tracked_object_kalman(frame, box, is_object_detected, prediction6x1, correction6x1, img_h, img_w)
 
-    detection_list.append([box[0],box[2]] if box != [] else None)
-    correction_list.append(np.reshape([correction6x1[0],correction6x1[2]],-1).astype(np.int32) if correction6x1 is not None else None)
-    prediction_list.append(np.reshape([prediction6x1[0],prediction6x1[2]],-1).astype(np.int32) if prediction6x1 is not None else None)
+    # detection_list.append([box[0],box[2]] if box != [] else None)
+    # correction_list.append(np.reshape([correction6x1[0],correction6x1[2]],-1).astype(np.int32) if correction6x1 is not None else None)
+    # prediction_list.append(np.reshape([prediction6x1[0],prediction6x1[2]],-1).astype(np.int32) if prediction6x1 is not None else None)
 
     # Display the frame
     cv2.imshow('Raw Image', frame)
@@ -146,7 +179,7 @@ while video_reader.cap.isOpened():
 
 video_reader.release()
 
-### plotting the detection location on first frame and tracking location
+# ### plotting the detection location on first frame and tracking location
 
-# 绘制检测和跟踪的位置轨迹
-plot_detection_and_tracking_2(first_frame, detection_list, prediction_list, correction_list)
+# # 绘制检测和跟踪的位置轨迹
+# plot_detection_and_tracking_2(first_frame, detection_list, prediction_list, correction_list)
