@@ -4,7 +4,7 @@ import numpy as np
 
 from read_video import VIDEO_READER
 from kalman_ball import detect_object
-from plot_kalman_figures import plot_detection_and_tracking_2
+from tools import plot_detection_and_tracking_2
 
 class Detection_trt():
     def __init__(self) -> None:
@@ -82,7 +82,7 @@ while video_reader.cap.isOpened():
         break
 
     ## detection
-    detected_location, is_object_detected = detect_object(frame, first_frame)
+    detected_location, is_object_detected, _ = detect_object(frame, first_frame)
 
     if not kalman_init:
         if is_object_detected:

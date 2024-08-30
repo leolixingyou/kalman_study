@@ -4,7 +4,7 @@ import numpy as np
 
 from read_video import VIDEO_READER
 from kalman_ball import detect_object
-from plot_kalman_figures import plot_detection_and_tracking_2
+from tools import plot_detection_and_tracking_2
 
 
 def param_kalman(kalman, initial_location):

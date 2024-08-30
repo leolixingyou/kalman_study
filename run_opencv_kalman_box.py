@@ -4,7 +4,7 @@ import numpy as np
 
 from read_video import VIDEO_READER
 from kalman_ball import detect_object
-from plot_kalman_figures import plot_detection_and_tracking_2
+from tools import plot_detection_and_tracking_2
 
 
 def fan_fu_transform(A):
@@ -161,9 +161,9 @@ while video_reader.cap.isOpened():
     
     frame_detect, frame_predict, frame_correct, frame_combined  = annotate_box_tracked_object_kalman(frame, box, is_object_detected, prediction6x1, correction6x1, img_h, img_w)
 
-    # detection_list.append([box[0],box[2]] if box != [] else None)
-    # correction_list.append(np.reshape([correction6x1[0],correction6x1[2]],-1).astype(np.int32) if correction6x1 is not None else None)
-    # prediction_list.append(np.reshape([prediction6x1[0],prediction6x1[2]],-1).astype(np.int32) if prediction6x1 is not None else None)
+    detection_list.append([box[0],box[2]] if box != [] else None)
+    correction_list.append(np.reshape([correction6x1[0],correction6x1[2]],-1).astype(np.int32) if correction6x1 is not None else None)
+    prediction_list.append(np.reshape([prediction6x1[0],prediction6x1[2]],-1).astype(np.int32) if prediction6x1 is not None else None)
 
     # Display the frame
     cv2.imshow('Raw Image', frame)
@@ -179,7 +179,7 @@ while video_reader.cap.isOpened():
 
 video_reader.release()
 
-# ### plotting the detection location on first frame and tracking location
+### plotting the detection location on first frame and tracking location
 
-# # 绘制检测和跟踪的位置轨迹
-# plot_detection_and_tracking_2(first_frame, detection_list, prediction_list, correction_list)
+# 绘制检测和跟踪的位置轨迹
+plot_detection_and_tracking_2(first_frame, detection_list, prediction_list, correction_list)

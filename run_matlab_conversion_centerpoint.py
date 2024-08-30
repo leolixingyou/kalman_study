@@ -2,7 +2,7 @@ import cv2
 
 from read_video import VIDEO_READER
 from kalman_ball import detect_object, annotate_tracked_object, Kalman_Single_Ball
-from plot_kalman_figures import plot_detection_and_tracking
+from tools import plot_detection_and_tracking
 
 file_path = '/workspace/src_code/tl_detector/kalman_study/singleball.mp4'
 video_reader = VIDEO_READER(file_path)

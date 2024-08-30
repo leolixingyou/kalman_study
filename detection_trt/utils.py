@@ -3,6 +3,7 @@ import pycuda.driver as cuda
 import pycuda.autoinit ## I had problem with this, so must import. Plz check yourself
 import numpy as np
 import cv2
+import copy
 
 def nms(boxes, scores, nms_thr):
     """Single class NMS implemented in Numpy."""
@@ -244,3 +245,38 @@ class BaseEngine(object):
         boxes_xyxy /= ratio
         dets = multiclass_nms(boxes_xyxy, scores, nms_thr=0.45, score_thr=0.1)
         return dets
+    
+    def draw_img(self, img, boxes, fcolor, class_names):
+        height, weight, _ = img.shape
+        tl = 3 or round(0.002 * (height + weight) / 2) + 1  # line/font thickness
+        tf = max(tl - 1, 1)  # font thickness
+        
+        cur_img = copy.copy(img)
+
+        if len(boxes) > 0 :
+            for i in range(len(boxes)):
+
+                box = boxes[i][3]
+                cls_id = boxes[i][0]
+                score = boxes[i][2]
+
+                x0 = int(box[0])
+                y0 = int(box[1])
+                x1 = int(box[2])
+                y1 = int(box[3])
+                x0 = 0 if  x0 < 0 else x0
+                y0 = 0 if  y0 < 0 else y0
+
+                _COLORS = self.rgb_day_list
+                
+                c1, c2 = (x0,y0), (x1,y1)
+                cv2.rectangle(cur_img, c1, c2, _COLORS[cls_id], thickness=tl, lineType=cv2.LINE_AA)
+                tf = max(tl - 1, 1)  # font thickness
+                text = '{}:{:.1f}%'.format(class_names[cls_id], score * 100)
+                t_size = cv2.getTextSize(text, 0, fontScale=tl / 3, thickness=tf)[0]
+                c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
+                cv2.rectangle(cur_img, c1, c2, _COLORS[cls_id], -1, cv2.LINE_AA)  # filled
+                cv2.putText(cur_img, text, (c1[0], c1[1] - 2), 0, tl / 3, fcolor, thickness=tf, lineType=cv2.LINE_AA)
+
+        img = cur_img
+        return img
