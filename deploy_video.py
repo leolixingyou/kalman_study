@@ -1,6 +1,4 @@
-import os
 import cv2
-import copy
 import numpy as np
 
 from read_video import VIDEO_READER
