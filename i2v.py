@@ -2,7 +2,7 @@ import os
 import cv2
 import time
 
-def get_bag_list(path,file_type):
+def get_file_list(path,file_type):
     image_names = []
     for maindir, subdir, file_name_list in os.walk(path):
         print(maindir)
@@ -53,8 +53,9 @@ def make_video(ingput_list, save_video_dir):
             video.release()
 if __name__ == '__main__':
     root_path = '/workspace/demo/'
-    img_path = f'{root_path}runs/img_tl_dis_1/f60/'
+    img_path = f'{root_path}f60/'
     save_video_dir = f'{root_path}'
     input_path = f'{img_path}'
-    ingput_list = sorted(get_bag_list(input_path,'.png'))
+    # ingput_list = sorted(get_file_list(input_path,'.png'))
+    ingput_list = sorted(get_file_list(input_path,'.png'),  reverse=True)
     make_video(ingput_list, save_video_dir)

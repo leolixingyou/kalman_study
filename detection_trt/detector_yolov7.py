@@ -4,7 +4,6 @@ import numpy as np
 import pycuda.driver as cuda ## I had problem with this, so must import. Plz check yourself 
 import pycuda.autoinit ## I had problem with this, so must import. Plz check yourself
 
-
 from detection_trt.det_infer import Predictor
 
 ##### Modify the args_init
@@ -74,8 +73,8 @@ class Detecotr_YoloV7:
             for traffic_light in bbox_f60:
                 if traffic_light[2] > 0.2:  # if probability exceed 20%
                     traffic_light_obs.append(traffic_light)
-        # sorting by size
-        traffic_light_obs = self.get_one_boxes(traffic_light_obs)
+        # # sorting by size
+        # traffic_light_obs = self.get_one_boxes(traffic_light_obs)
         return traffic_light_obs
     
     def update_tracking(self,box_result,flag):
@@ -119,4 +118,3 @@ class Detecotr_YoloV7:
         filter_img = self.det_pred.draw_img(det_img, tl_boxes, [0, 0, 0], self.class_names)
 
         return filter_img, tl_boxes
-

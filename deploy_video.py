@@ -2,12 +2,12 @@ import cv2
 import numpy as np
 
 from read_video import VIDEO_READER
-from opencv_tracker import Opencv_Tracker
+from opencv_tracker import Single_Tracker_Kalman
 from tools import opencv_box_detection, annotate_box_tracked_object_kalman, \
             plot_detection_and_tracking_2, xyxy_to_xywh
 from detection_trt.detector_yolov7 import Detecotr_YoloV7
 
-    
+
 def read_video_first_video(file_path):
     video_reader = VIDEO_READER(file_path)
 
@@ -22,12 +22,11 @@ def run_single_tracker(detector_yolov, file_path):
 
     video_reader, first_frame, [img_h, img_w] = read_video_first_video(file_path)
 
-    kalman_init = False
+    single_tarcker = Single_Tracker_Kalman()
+
     detection_list = []
     prediction_list = []
     correction_list = []
-    prediction6x1 = None
-    correction6x1 = None
 
     while video_reader.cap.isOpened():
         frame = video_reader.read_frame()
@@ -37,26 +36,28 @@ def run_single_tracker(detector_yolov, file_path):
         ## Detection
         # box, is_object_detected = opencv_box_detection(frame, first_frame)
         filter_img, tl_boxes = detector_yolov.image_process(frame, '1')
-        if tl_boxes != []:
-            tl_boxes = xyxy_to_xywh(tl_boxes[-1])
-
         is_object_detected = True if np.any(tl_boxes) else False
-        ## Tracking
-        if not kalman_init:
-            if is_object_detected:
-                kalman_track = Opencv_Tracker(tl_boxes)
-                kalman_init = True
+        
+        if tl_boxes != []:
+            tl_one_box = detector_yolov.get_one_boxes(tl_boxes)
+            tl_boxes_det = xyxy_to_xywh(tl_one_box[-1])
         else:
-            prediction6x1 = kalman_track.kalman.predict()
-            if is_object_detected:
-                kalman_track.kalman.correct(tl_boxes.astype(np.float32))
-                correction6x1 = kalman_track.kalman.statePost.copy()
+            tl_boxes_det = []
+
+
+
+        ### Tracking
+        single_tarcker.is_object_detected = is_object_detected
+        if single_tarcker:
+            prediction6x1, correction6x1 = single_tarcker.tracking(tl_boxes_det)
+
+
 
         ## Visualization
-        frame_detect, frame_predict, frame_correct, frame_combined  = annotate_box_tracked_object_kalman(frame, tl_boxes, is_object_detected, prediction6x1, correction6x1, img_h, img_w)
+        frame_detect, frame_predict, frame_correct, frame_combined  = annotate_box_tracked_object_kalman(frame, tl_boxes_det, is_object_detected, prediction6x1, correction6x1, img_h, img_w)
 
         ## Process for Visualization 
-        detection_list.append([tl_boxes[0],tl_boxes[2]] if tl_boxes != [] else None)
+        detection_list.append([tl_boxes_det[0],tl_boxes_det[2]] if tl_boxes_det != [] else None)
         correction_list.append(np.reshape([correction6x1[0],correction6x1[2]],-1).astype(np.int32) if correction6x1 is not None else None)
         prediction_list.append(np.reshape([prediction6x1[0],prediction6x1[2]],-1).astype(np.int32) if prediction6x1 is not None else None)
 
@@ -79,6 +80,7 @@ def run_single_tracker(detector_yolov, file_path):
     plot_detection_and_tracking_2(first_frame, detection_list, prediction_list, correction_list)
 
 if __name__ == "__main__":
-    file_path = '/workspace/time_2024_06_19_14_48_f60.mp4'
+    # file_path = '/workspace/time_2024_06_19_14_48_f60.mp4'## inverse
+    file_path = '/workspace/time_2024_09_05_02_28_f60.mp4'
     detector_yolov = Detecotr_YoloV7()
     run_single_tracker(detector_yolov, file_path)
