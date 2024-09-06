@@ -27,6 +27,9 @@ def run_single_tracker(detector_yolov, file_path):
     detection_list = []
     prediction_list = []
     correction_list = []
+    
+    prediction6x1 = None
+    correction6x1 = None
 
     while video_reader.cap.isOpened():
         frame = video_reader.read_frame()
@@ -38,9 +41,10 @@ def run_single_tracker(detector_yolov, file_path):
         filter_img, tl_boxes = detector_yolov.image_process(frame, '1')
         is_object_detected = True if np.any(tl_boxes) else False
         
+        ## Make tl_box from xyxy to xywh 
         if tl_boxes != []:
             tl_one_box = detector_yolov.get_one_boxes(tl_boxes)
-            tl_boxes_det = xyxy_to_xywh(tl_one_box[-1])
+            tl_boxes_det = xyxy_to_xywh(tl_one_box[-1][-1])
         else:
             tl_boxes_det = []
 
@@ -48,8 +52,8 @@ def run_single_tracker(detector_yolov, file_path):
 
         ### Tracking
         single_tarcker.is_object_detected = is_object_detected
-        if single_tarcker:
-            prediction6x1, correction6x1 = single_tarcker.tracking(tl_boxes_det)
+        if single_tarcker.is_object_detected:
+            prediction6x1, correction6x1 = single_tarcker.tracking_update(tl_boxes_det)
 
 
 

@@ -47,36 +47,39 @@ class Single_Tracker_Kalman:
         self.prediction6x1 = None
         self.correction6x1 = None
 
-    def tracking(self, boxes_det):
+    def tracking_update(self, box_det):
         ## Tracking
         if not self.kalman_init:
             if self.is_object_detected:
-                self.kalman_track = Opencv_Tracker(boxes_det)
+                self.kalman_track = Opencv_Tracker(box_det)
                 self.kalman_init = True
         else:
             self.prediction6x1 = self.kalman_track.kalman.predict()
             if self.is_object_detected:
-                self.kalman_track.kalman.correct(boxes_det.astype(np.float32))
-                self.correction6x1 = self.      kalman_track.kalman.statePost.copy()
+                self.kalman_track.kalman.correct(box_det.astype(np.float32))
+                self.correction6x1 = self.kalman_track.kalman.statePost.copy()
 
         return self.prediction6x1, self.correction6x1
-    
-
 
 ### work for single axis motion
-class Single_Tracker_Kalman_for_MOT:
-    def __init__(self, boxes_det) -> None:
-        self.kalman_init = False 
-        self.is_object_detected = False 
-        self.kalman_track = Opencv_Tracker(boxes_det)
+class Tracker_Kalman_for_MOT:
+    count = 0
+    def __init__(self, box_det) -> None:
+        self.kalman_track = Opencv_Tracker(box_det)
     
         self.prediction6x1 = None
         self.correction6x1 = None
+        self.id = Tracker_Kalman_for_MOT.count
+        Tracker_Kalman_for_MOT.count += 1
 
-    def tracking(self, boxes_det):
+        ## 'Predict' and 'Correction'
+        self.state_tracker = 'Predict'
+
+
+    def tracking_update(self, box_det):
+        self.state_tracker = 'Predict'
         self.prediction6x1 = self.kalman_track.kalman.predict()
-        if self.is_object_detected:
-            self.kalman_track.kalman.correct(boxes_det.astype(np.float32))
+        if box_det is not []:
+            self.state_tracker = 'Correction'
+            self.kalman_track.kalman.correct(box_det.astype(np.float32))
             self.correction6x1 = self.kalman_track.kalman.statePost.copy()
-
-        return self.prediction6x1, self.correction6x1

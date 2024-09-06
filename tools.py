@@ -110,7 +110,7 @@ def annotate_box_tracked_object_kalman(frame, detected_location, is_object_detec
         cv2.putText(frame_combined, str(pt), pt - np.array([20,40]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
         cv2.putText(frame_combined, 'Prediction', pt - np.array([20,20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
 
-    if is_object_detected:
+    if detected_location != []:
         pt = np.reshape([detected_location[0],detected_location[2]],-1).astype(np.int32)
         pt_top = np.array([detected_location[0], detected_location[2]]) - (1/2) * np.array([detected_location[1], detected_location[3]])
         pt_bottom = np.array([detected_location[0], detected_location[2]]) + (1/2) * np.array([detected_location[1], detected_location[3]])
@@ -158,7 +158,7 @@ def detect_object(frame, firts_frame):
     return np.array([]), False, None
 
 def xyxy_to_xywh(box):
-    x_top, y_top, x_bottom, y_bottom = box[-1]
+    x_top, y_top, x_bottom, y_bottom = box
     box_xmid = (x_top+x_bottom)/2
     box_ymid = (y_top+y_bottom)/2
     box_width = x_bottom - x_top
@@ -166,3 +166,35 @@ def xyxy_to_xywh(box):
 
     box = np.array([box_xmid, box_width, box_ymid, box_height]).astype(np.int32)
     return box
+
+def iou_batch(bb_test, bb_gt):
+    bb_gt = np.expand_dims(bb_gt, 0)
+    bb_test = np.expand_dims(bb_test, 1)
+    
+    xx1 = np.maximum(bb_test[..., 0], bb_gt[..., 0])
+    yy1 = np.maximum(bb_test[..., 1], bb_gt[..., 1])
+    xx2 = np.minimum(bb_test[..., 2], bb_gt[..., 2])
+    yy2 = np.minimum(bb_test[..., 3], bb_gt[..., 3])
+    w = np.maximum(0., xx2 - xx1)
+    h = np.maximum(0., yy2 - yy1)
+    wh = w * h
+    o = wh / ((bb_test[..., 2] - bb_test[..., 0]) * (bb_test[..., 3] - bb_test[..., 1])                                      
+    + (bb_gt[..., 2] - bb_gt[..., 0]) * (bb_gt[..., 3] - bb_gt[..., 1]) - wh)
+
+    return(o)
+
+def iou_batch_scrached(bb_test, bb_gt):
+    bb_gt = np.expand_dims(bb_gt, 0)
+    bb_test = np.expand_dims(bb_test, 1)
+    
+    xx1 = np.maximum(bb_test[..., 0], bb_gt[..., 0])
+    yy1 = np.maximum(bb_test[..., 1], bb_gt[..., 1])
+    xx2 = np.minimum(bb_test[..., 2], bb_gt[..., 2])
+    yy2 = np.minimum(bb_test[..., 3], bb_gt[..., 3])
+    w = np.maximum(0., xx2 - xx1)
+    h = np.maximum(0., yy2 - yy1)
+    wh = w * h
+    o = wh / ((bb_test[..., 2] - bb_test[..., 0]) * (bb_test[..., 3] - bb_test[..., 1])                                      
+    + (bb_gt[..., 2] - bb_gt[..., 0]) * (bb_gt[..., 3] - bb_gt[..., 1]) - wh)
+    
+    return(o)

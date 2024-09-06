@@ -5,6 +5,7 @@ import pycuda.driver as cuda ## I had problem with this, so must import. Plz che
 import pycuda.autoinit ## I had problem with this, so must import. Plz check yourself
 
 from detection_trt.det_infer import Predictor
+from tools import iou_batch
 
 ##### Modify the args_init
 class Detecotr_YoloV7:
@@ -106,12 +107,24 @@ class Detecotr_YoloV7:
 
         return update_list
 
-    def image_process(self,img,flag):
-        ### using with vs
-        box_result = self.det_pred.steam_inference(img,conf=0.1, end2end='end2end' ,day_night=self.args.day_night)
+    def image_process(self,img,flag):       
         ### using shell file named 'vision.sh'
         # box_result = self.det_pred.steam_inference(img,conf=0.1, end2end=args.end2end,day_night=self.day_night)
         # box_result = self.update_tracking(box_result,flag)
+
+        ### using with vs
+        box_result = self.det_pred.steam_inference(img,conf=0.1, end2end='end2end' ,day_night=self.args.day_night)
+        if len(box_result) > 1:
+            box_info = np.array([np.array(x[-1]) for x in box_result])
+            ### IOU over than 90 means overlapped
+            box_result_iou = iou_batch(box_info, box_info) ## np.where(box_result_iou>0.8)
+        det_img = self.det_pred.draw_img(img,box_result, [255, 255, 255],self.class_names)
+
+
+        tl_boxes = self.get_traffic_light_objects(box_result)
+
+        return None, tl_boxes
+
 
         det_img = self.det_pred.draw_img(img,box_result, [255, 255, 255],self.class_names)
         tl_boxes = self.get_traffic_light_objects(box_result)

@@ -1,6 +1,7 @@
 ### MOT 
 
 import numpy as np
+from opencv_tracker import Tracker_Kalman_for_MOT
 
 def linear_assignment(cost_matrix):
     try:
@@ -76,7 +77,7 @@ def associate_detections_to_trackers(detections, trackers, iou_threshold = 0.3):
         
     return matches, np.array(unmatched_detections), np.array(unmatched_trackers)
 
-class Multi_Object_tracking:
+class Multi_Object_Tracking:
     def __init__(self, max_age = 1, min_hits = 3 , iou_threshold = 0.3) -> None:
         self.max_age = max_age
         self.min_hits = min_hits
@@ -106,7 +107,7 @@ class Multi_Object_tracking:
 
         self.frame_count += 1
 
-        # Get predicted locations from existing trackers
+        ### Get predicted locations from existing trackers
         trks = np.zeros((len(self.trackers), 6))
         to_del = []
         ret = []
@@ -115,6 +116,8 @@ class Multi_Object_tracking:
             trk[:] = [pos[0], pos[1], pos[2], pos[3], 0, 0]
             if np.any(np.isnan(pos)): ### Any num in pos is True
                 to_del.append(t)
+        
+        ### Mask out nan values
         trks = np.ma.compress_rows(np.ma.masked_invalid(trks))
         for t in reversed(to_del):
             self.trackers.pop(t)
@@ -146,11 +149,52 @@ class Multi_Object_tracking:
             return np.concatenate(ret)
         return np.empty((0,6))
 
+class Multi_Object_Tracking:
+    def __init__(self, max_age = 1, min_hits = 3 , iou_threshold = 0.3) -> None:
+        self.max_age = max_age
+        self.min_hits = min_hits
+        self.iou_threshold = iou_threshold
+        self.tracker_list = []
+        self.frame_count = 0
+
+    def preprocess_box(self, detection):
+        """
+        box = x1,y1,x2,y2 or xmid,ymid,w,h or xmid, ymid, _, _ ;
+        detection is the numpy array as [[box1], [box2], [box3],......]
+        The previous work get it from [[class1, area1, score1, [box1]], [class2, area2, score2, [box2]],......]
+        Recommand use np.array(boxresult)[:3]
+        """
+        dets_to_sort = np.empty((0,4)) ### based on the system model
+        for i, box in enumerate(detection):
+            x0, y0, x1, y1 = box
+            dets_to_sort = np.vstack((dets_to_sort, 
+                        np.array([x0, y0, x1, y1])))
+        return dets_to_sort
+    
+    ### detection shape based on system model
+    def update(self, detections = np.empty((0,4))):
+
+        trackers = np.zeros_like(self.tracker_list)
+        for i, tracker in enumerate(self.tracker_list):
+            tracker[i].tracking_update(detections)
+            tracker[:] = tracker[i].prediction6x1
+            if tracker[i].state_tracker == 'Corrction':
+                tracker[:] = tracker[i].correction6x1
+
+        matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(detections, trackers, self.iou_threshold)
+        
+        for un_det in unmatched_dets:
+            trakcker_mot = Tracker_Kalman_for_MOT(un_det)
+        
+        self.tracker_list
+
+
+
 def main(multi_object_tracking):
     multi_object_tracking.preprocess_box()
     multi_object_tracking.update()
 
 if __name__ == "__main__":
-    multi_object_tracking = Multi_Object_tracking()
+    multi_object_tracking = Multi_Object_Tracking()
     main(multi_object_tracking)
 
